@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set page = "trend" %}
+{% block title %}走势图 - 彩票分析系统{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-title">号码走势图（最近50期）</div>
+    <div id="trend-chart" class="chart-box"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let trendChart = null;
+async function onPageLoad() {
+    if (!trendChart) trendChart = initChart('trend-chart');
+    const draws = currentLottery === 'dlt' ? await API.dlt.draws(50) : await API.ssq.draws(50);
+    renderTrendChart(trendChart, draws.data, currentLottery);
+}
+onPageLoad();
+window.addEventListener('resize', () => { if (trendChart) trendChart.resize(); });
+</script>
+{% endblock %}

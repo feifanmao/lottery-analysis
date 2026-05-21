@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% set page = "advanced" %}
+{% block title %}高级分析 - 彩票分析系统{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div id="parity-chart" class="chart-box"></div>
+    </div>
+    <div class="card">
+        <div id="bs-chart" class="chart-box"></div>
+    </div>
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div id="sum-chart" class="chart-box"></div>
+    </div>
+    <div class="card">
+        <div id="span-chart" class="chart-box"></div>
+    </div>
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div id="ac-chart" class="chart-box"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">连号与重复号</div>
+        <div id="consec-repeat">加载中...</div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let parityChart = null, bsChart = null, sumChart = null, spanChart = null, acChart = null;
+
+async function onPageLoad() {
+    if (!parityChart) parityChart = initChart('parity-chart');
+    if (!bsChart) bsChart = initChart('bs-chart');
+    if (!sumChart) sumChart = initChart('sum-chart');
+    if (!spanChart) spanChart = initChart('span-chart');
+    if (!acChart) acChart = initChart('ac-chart');
+
+    const isDlt = currentLottery === 'dlt';
+
+    // 奇偶比
+    const parity = await API.analysis.parity(currentLottery);
+    renderRatioPie(parityChart, parity.odd_even, '奇偶比分布');
+
+    // 大小比
+    renderRatioPie(bsChart, parity.big_small, '大小比分布');
+
+    // 和值
+    const sumData = await API.analysis.sum(currentLottery);
+    const sumDist = isDlt ? sumData.front_sum.distribution : sumData.red_sum.distribution;
+    renderSumDistChart(sumChart, sumDist, isDlt ? '前区和值分布' : '红球和值分布');
+
+    // 跨度
+    const spanData = await API.analysis.span(currentLottery);
+    const spanDist = isDlt ? spanData.front.distribution : spanData.red.distribution;
+    renderDistChart(spanChart, spanDist, isDlt ? '前区跨度分布' : '红球跨度分布', 'span');
+
+    // AC值
+    const acData = await API.analysis.ac(currentLottery);
+    renderDistChart(acChart, acData.distribution, 'AC值分布', 'ac');
+
+    // 连号与重复号
+    const consec = await API.analysis.consecutive(currentLottery);
+    const repeat = await API.analysis.repeat(currentLottery);
+    const primaryLabel = isDlt ? '前区' : '红球';
+    document.getElementById('consec-repeat').innerHTML = `
+        <p style="margin-bottom:12px;"><strong>连号出现率：</strong>${consec.consecutive_rate}%</p>
+        <p style="margin-bottom:8px;"><strong>连号组数分布：</strong></p>
+        <table class="stat-table"><thead><tr><th>连号组数</th><th>出现次数</th></tr></thead><tbody>
+        ${consec.group_count_dist.map(x => `<tr><td>${x.groups}</td><td>${x.times}</td></tr>`).join('')}
+        </tbody></table>
+        <p style="margin:16px 0 8px;"><strong>平均重复号数：</strong>${repeat.avg_repeat} 个/期</p>
+        <p style="margin-bottom:8px;"><strong>重复号数分布：</strong></p>
+        <table class="stat-table"><thead><tr><th>重复个数</th><th>出现次数</th></tr></thead><tbody>
+        ${repeat.distribution.map(x => `<tr><td>${x.count}</td><td>${x.times}</td></tr>`).join('')}
+        </tbody></table>
+        <p style="margin:16px 0 8px;"><strong>高频重复号码：</strong></p>
+        <div class="tag-row">${repeat.top_repeat_nums.map(x => `<span class="tag tag-hot">${String(x.number).padStart(2,'0')} (${x.count}次)</span>`).join('')}</div>
+    `;
+}
+onPageLoad();
+window.addEventListener('resize', () => {
+    [parityChart, bsChart, sumChart, spanChart, acChart].forEach(c => { if (c) c.resize(); });
+});
+</script>
+{% endblock %}

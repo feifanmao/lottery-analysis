@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}彩票分析系统{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">彩票分析系统</div>
+        <div class="nav-links">
+            <a href="/" class="{% if page == 'index' %}active{% endif %}">首页</a>
+            <a href="/trend" class="{% if page == 'trend' %}active{% endif %}">走势图</a>
+            <a href="/frequency" class="{% if page == 'frequency' %}active{% endif %}">频率分析</a>
+            <a href="/segment" class="{% if page == 'segment' %}active{% endif %}">号段分析</a>
+            <a href="/advanced" class="{% if page == 'advanced' %}active{% endif %}">高级分析</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="lottery-switch">
+            <button class="switch-btn active" data-lottery="dlt">大乐透</button>
+            <button class="switch-btn" data-lottery="ssq">双色球</button>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set page = "segment" %}
+{% block title %}号段分析 - 彩票分析系统{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div id="seg-chart-1" class="chart-box"></div>
+    </div>
+    <div class="card">
+        <div id="seg-chart-2" class="chart-box"></div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-title">号段详情</div>
+    <div id="seg-table">加载中...</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let segChart1 = null, segChart2 = null;
+async function onPageLoad() {
+    if (!segChart1) segChart1 = initChart('seg-chart-1');
+    if (!segChart2) segChart2 = initChart('seg-chart-2');
+    const isDlt = currentLottery === 'dlt';
+    const data = await API.analysis.segment(currentLottery);
+
+    if (isDlt) {
+        renderSegmentPie(segChart1, data.front, '前区号段分布');
+        renderSegmentPie(segChart2, data.back, '后区号段分布');
+    } else {
+        renderSegmentPie(segChart1, data.red, '红球号段分布');
+        renderSegmentPie(segChart2, data.blue, '蓝球号段分布');
+    }
+
+    const primary = isDlt ? data.front : data.red;
+    const secondary = isDlt ? data.back : data.blue;
+    const pLabel = isDlt ? '前区' : '红球';
+    const sLabel = isDlt ? '后区' : '蓝球';
+    document.getElementById('seg-table').innerHTML = `
+        <table class="stat-table"><thead><tr><th>号段</th><th>区域</th><th>总出现次数</th><th>场均出现</th></tr></thead><tbody>
+        ${primary.map(x => `<tr><td>${x.segment}</td><td>${pLabel}</td><td>${x.total}</td><td>${x.avg_per_draw}</td></tr>`).join('')}
+        ${secondary.map(x => `<tr><td>${x.segment}</td><td>${sLabel}</td><td>${x.total}</td><td>${x.avg_per_draw}</td></tr>`).join('')}
+        </tbody></table>
+    `;
+}
+onPageLoad();
+window.addEventListener('resize', () => { if (segChart1) segChart1.resize(); if (segChart2) segChart2.resize(); });
+</script>
+{% endblock %}

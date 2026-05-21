@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set page = "frequency" %}
+{% block title %}频率分析 - 彩票分析系统{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div id="freq-chart-1" class="chart-box"></div>
+    </div>
+    <div class="card">
+        <div id="freq-chart-2" class="chart-box"></div>
+    </div>
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title">冷热号</div>
+        <div id="hot-cold">加载中...</div>
+    </div>
+    <div class="card">
+        <div class="card-title">频率排行</div>
+        <div id="freq-table">加载中...</div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let freqChart1 = null, freqChart2 = null;
+async function onPageLoad() {
+    if (!freqChart1) freqChart1 = initChart('freq-chart-1');
+    if (!freqChart2) freqChart2 = initChart('freq-chart-2');
+    const isDlt = currentLottery === 'dlt';
+    const data = await API.analysis.frequency(currentLottery);
+
+    if (isDlt) {
+        renderFrequencyChart(freqChart1, data.front, '前区号码频率');
+        renderFrequencyChart(freqChart2, data.back, '后区号码频率');
+    } else {
+        renderFrequencyChart(freqChart1, data.red, '红球号码频率');
+        renderFrequencyChart(freqChart2, data.blue, '蓝球号码频率');
+    }
+
+    const hotKey = isDlt ? 'hot_front' : 'hot_red';
+    const coldKey = isDlt ? 'cold_front' : 'cold_red';
+    const hotBackKey = isDlt ? 'hot_back' : 'hot_blue';
+    const coldBackKey = isDlt ? 'cold_back' : 'cold_blue';
+    document.getElementById('hot-cold').innerHTML = `
+        <p style="margin-bottom:8px;"><strong>前区/红球热门：</strong></p>
+        <div class="tag-row">${data[hotKey].map(n => `<span class="tag tag-hot">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+        <p style="margin:12px 0 8px;"><strong>前区/红球冷门：</strong></p>
+        <div class="tag-row">${data[coldKey].map(n => `<span class="tag tag-cold">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+        <p style="margin:12px 0 8px;"><strong>后区/蓝球热门：</strong></p>
+        <div class="tag-row">${data[hotBackKey].map(n => `<span class="tag tag-hot">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+        <p style="margin:12px 0 8px;"><strong>后区/蓝球冷门：</strong></p>
+        <div class="tag-row">${data[coldBackKey].map(n => `<span class="tag tag-cold">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+    `;
+
+    const primary = isDlt ? data.front : data.red;
+    const top10 = primary.slice(0, 10);
+    document.getElementById('freq-table').innerHTML = `
+        <table class="stat-table"><thead><tr><th>排名</th><th>号码</th><th>出现次数</th><th>频率</th></tr></thead><tbody>
+        ${top10.map((x, i) => `<tr><td>${i+1}</td><td>${String(x.number).padStart(2,'0')}</td><td>${x.count}</td><td>${x.rate}%</td></tr>`).join('')}
+        </tbody></table>
+    `;
+}
+onPageLoad();
+window.addEventListener('resize', () => { if (freqChart1) freqChart1.resize(); if (freqChart2) freqChart2.resize(); });
+</script>
+{% endblock %}

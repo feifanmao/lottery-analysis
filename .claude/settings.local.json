@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk pip *)",
+      "Bash(python -m pip install flask requests beautifulsoup4 lxml)",
+      "Bash(python -c \"from models.database import init_db; init_db\\(\\); print\\('DB OK'\\)\")",
+      "Bash(timeout 5 python app.py)",
+      "Bash(python -m pip install waitress)",
+      "Bash(timeout 5 python server.py)",
+      "Bash(python -c \"from server import app; from waitress import serve; print\\('Server module OK'\\)\")",
+      "Bash(python -m pip install pyinstaller)",
+      "Bash(python -m PyInstaller lottery.spec --noconfirm)",
+      "Bash(rtk ls *)",
+      "Bash(gh auth *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(git init *)",
+      "Bash(rtk git *)"
+    ]
+  }
+}

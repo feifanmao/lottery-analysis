@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set page = "index" %}
+{% block title %}首页 - 彩票分析系统{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title">最新开奖</div>
+        <div id="latest-draw">加载中...</div>
+    </div>
+    <div class="card">
+        <div class="card-title">数据概览</div>
+        <div id="overview">加载中...</div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-title">最近开奖记录</div>
+    <div id="draw-list">加载中...</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function onPageLoad() {
+    const isDlt = currentLottery === 'dlt';
+    try {
+        const latest = isDlt ? await API.dlt.latest() : await API.ssq.latest();
+        document.getElementById('latest-draw').innerHTML = isDlt
+            ? renderDltBalls(latest.data)
+            : renderSsqBalls(latest.data);
+
+        const draws = isDlt ? await API.dlt.draws(20) : await API.ssq.draws(20);
+        document.getElementById('draw-list').innerHTML = renderDrawList(draws.data, currentLottery);
+
+        const freq = await API.analysis.frequency(currentLottery);
+        const hotKey = isDlt ? 'hot_front' : 'hot_red';
+        const coldKey = isDlt ? 'cold_front' : 'cold_red';
+        document.getElementById('overview').innerHTML = `
+            <p style="margin-bottom:12px;"><strong>总期数：</strong>${freq.total_draws}</p>
+            <p style="margin-bottom:8px;"><strong>热门号码：</strong></p>
+            <div class="tag-row">${freq[hotKey].map(n => `<span class="tag tag-hot">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+            <p style="margin:12px 0 8px;"><strong>冷门号码：</strong></p>
+            <div class="tag-row">${freq[coldKey].map(n => `<span class="tag tag-cold">${String(n).padStart(2,'0')}</span>`).join('')}</div>
+        `;
+    } catch(e) {
+        document.getElementById('latest-draw').innerHTML = '<p style="color:red;">加载失败，请检查数据是否已导入</p>';
+    }
+}
+onPageLoad();
+</script>
+{% endblock %}
